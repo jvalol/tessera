@@ -221,7 +221,8 @@ mod tests {
 
             for other in SHAPES.iter().skip(i + 1) {
                 let cells = Piece::new(*other).board_cells();
-                let flipped: [(i32, i32); CELLS] = std::array::from_fn(|i| (-cells[i].0, cells[i].1));
+                let flipped: [(i32, i32); CELLS] =
+                    std::array::from_fn(|i| (-cells[i].0, cells[i].1));
 
                 assert!(
                     !mine.contains(&normalized(flipped)),
