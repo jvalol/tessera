@@ -12,7 +12,7 @@ pub const MOVE_DELAY: f32 = 0.17;
 pub const MOVE_REPEAT: f32 = 0.05;
 
 /// Sideways offsets tried when a rotation does not fit where it is.
-const KICKS: [i32; 4] = [-1, 1, -2, 2];
+const KICKS: [i32; 6] = [-1, 1, -2, 2, -3, 3];
 
 pub trait System {
     #[allow(unused_variables)]
@@ -361,6 +361,7 @@ pub fn lock_piece(state: &mut State) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::piece::SHAPES;
     use crate::board::{HEIGHT, WIDTH};
     use crate::piece::Shape;
 
@@ -385,6 +386,41 @@ mod tests {
         for x in 0..WIDTH {
             state.board.fill(x, y, Shape::I.color());
         }
+    }
+
+    #[test]
+    fn a_five_row_clear_scores_twelve_hundred_in_play() {
+        // score_for_rows(5, ..) returning 1200 is one thing; the game reaching
+        // it is another. The I pentomino stands five tall, so dropping it into
+        // a five deep notch takes five rows at once. Spec 0008 asks for this by
+        // hand and it is close to unreachable by hand, so it lives here.
+        let mut state = playing_state();
+        state.score = 0;
+        state.level = 1;
+
+        // five rows full but for one column
+        let gap = 0;
+        for y in HEIGHT - 5..HEIGHT {
+            for x in 0..WIDTH {
+                if x != gap {
+                    state.board.fill(x, y, Shape::I.color());
+                }
+            }
+        }
+
+        // an upright I dropped into that column fills all five
+        state.piece = Some(Piece::at(Shape::I, (gap, HIDDEN_ROWS)));
+
+        let mut input = Input::new();
+        input.hard_drop_pressed = true;
+        play(&mut input, &mut state);
+
+        assert_eq!(state.rows, 5, "cleared {} rows", state.rows);
+        assert!(
+            state.score >= 1200,
+            "a five row clear scored {}, want at least the 1200 for the clear",
+            state.score
+        );
     }
 
     #[test]
@@ -462,6 +498,28 @@ mod tests {
 
         play(&mut input, &mut state);
         assert_eq!(piece(&state).position.0, start - 2);
+    }
+
+    #[test]
+    fn rotation_kicks_three_off_the_wall() {
+        // The I pentomino lying flat reaches two cells either side of its
+        // origin, so turning it upright hard against a wall needs a kick of
+        // three. Two was enough when a piece was four cells. Spec 0008.
+        let mut state = playing_state();
+        state.piece = Some(Piece::at(Shape::I, (0, 6)));
+
+        let mut input = Input::new();
+        input.rotate_cw_pressed = true;
+        play(&mut input, &mut state);
+
+        let turned = piece(&state);
+        assert!(state.board.fits(&turned), "{:?}", turned.board_cells());
+        assert!(turned.board_cells().iter().all(|(x, _)| *x >= 0));
+        assert_eq!(
+            turned.position.0, 2,
+            "expected a kick of two or three, landed at {}",
+            turned.position.0
+        );
     }
 
     #[test]
@@ -552,8 +610,17 @@ mod tests {
         input.hard_drop_pressed = true;
         play(&mut input, &mut state);
 
-        // the T bottoms out with its wide row on the floor
-        let rows = (HEIGHT - 1) - start;
+        // how far below its own origin the piece reaches, so this does not
+        // assume a shape: the T pentomino hangs a cell lower than the T
+        // tetromino did
+        let reach = Piece::new(Shape::T)
+            .board_cells()
+            .iter()
+            .map(|cell| cell.1)
+            .max()
+            .expect("cells");
+
+        let rows = (HEIGHT - 1 - reach) - start;
         assert_eq!(state.score, (rows as u32) * 2);
     }
 
@@ -652,6 +719,31 @@ mod tests {
         play(&mut input, &mut state);
 
         assert!(!state.hold_used);
+    }
+
+    #[test]
+    fn every_piece_spawns_in_every_rotation() {
+        // the I pentomino reaches two cells above its own origin and five
+        // across when turned, so the hidden rows and the width both have to
+        // hold it. Spec 0008.
+        for shape in SHAPES {
+            let state = playing_state();
+
+            for turn in 0..4 {
+                let mut piece = Piece::at(shape, (WIDTH / 2 - 1, HIDDEN_ROWS - 1));
+                for _ in 0..turn {
+                    piece = piece.rotated_cw();
+                }
+
+                assert!(
+                    state.board.fits(&piece),
+                    "{:?} does not fit at spawn after {} turns: {:?}",
+                    shape,
+                    turn,
+                    piece.board_cells()
+                );
+            }
+        }
     }
 
     #[test]

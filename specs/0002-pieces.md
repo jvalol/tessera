@@ -1,7 +1,17 @@
 # 0002 Pieces
 
-**Status:** implemented
+**Status:** superseded by 0008
 **Date:** 2026-09-20
+
+> Superseded by spec 0008 on 2026-09-28, which replaced the seven tetrominoes
+> with the twelve free pentominoes. Kept on file because it describes what the
+> game was, and because 0008's wall kicks and bag are widenings of what is
+> written here rather than new ideas.
+>
+> The tests it names are gone with the tetrominoes. Their descendants in 0008:
+> `every_piece_has_four_cells` became `every_piece_has_five_cells`,
+> `o_does_not_change_when_rotated` became `x_does_not_change_when_rotated`, and
+> `a_bag_deals_all_seven` became `a_bag_deals_all_twelve`.
 
 ## Goal
 

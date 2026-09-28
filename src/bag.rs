@@ -2,8 +2,9 @@ use crate::piece::{Shape, SHAPES};
 use rand::seq::SliceRandom;
 use std::collections::VecDeque;
 
-/// Deals all seven pieces in a shuffled order, then shuffles them again, so no
-/// piece can go missing for long and no more than two of a kind come in a row.
+/// Deals all twelve pieces in a shuffled order, then shuffles them again, so no
+/// piece can go missing for more than twenty-two in a row, and no more than two
+/// of a kind come together. See spec 0008.
 pub struct Bag {
     queue: VecDeque<Shape>,
 }
@@ -48,19 +49,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_bag_deals_all_seven() {
+    fn a_bag_deals_all_twelve() {
         let mut bag = Bag::new();
-        let mut dealt: Vec<Shape> = (0..7).map(|_| bag.next()).collect();
+        let mut dealt: Vec<Shape> = (0..12).map(|_| bag.next()).collect();
         dealt.sort_unstable_by_key(|shape| format!("{:?}", shape));
         dealt.dedup();
 
-        assert_eq!(dealt.len(), 7);
+        assert_eq!(dealt.len(), 12);
     }
 
     #[test]
     fn bags_keep_coming() {
         let mut bag = Bag::new();
-        let dealt: Vec<Shape> = (0..14).map(|_| bag.next()).collect();
+        let dealt: Vec<Shape> = (0..24).map(|_| bag.next()).collect();
 
         for shape in SHAPES {
             assert_eq!(

@@ -1,10 +1,15 @@
 use crate::piece::Piece;
 use glam::Vec4;
 
-pub const WIDTH: i32 = 10;
+pub const WIDTH: i32 = 12;
 pub const VISIBLE_HEIGHT: i32 = 20;
 /// Rows above the visible board where pieces spawn.
-pub const HIDDEN_ROWS: i32 = 2;
+/// Rows above the visible board, where a piece spawns.
+///
+/// Three since spec 0008, not two: the I pentomino reaches two cells above its
+/// own origin, and spawning at HIDDEN_ROWS - 1 put it off the top of the board,
+/// which read as an instant game over every time it came up.
+pub const HIDDEN_ROWS: i32 = 3;
 pub const HEIGHT: i32 = VISIBLE_HEIGHT + HIDDEN_ROWS;
 
 /// The stack of locked cells. Cell (0, 0) is the top-left, x grows right and y
@@ -109,10 +114,17 @@ mod tests {
     }
 
     #[test]
+    fn the_board_is_twelve_wide() {
+        // ten was right when a piece was four cells; the I pentomino is five
+        // long and needs room either side of it. Spec 0008.
+        assert_eq!(WIDTH, 12);
+    }
+
+    #[test]
     fn board_has_its_dimensions() {
-        assert_eq!(WIDTH, 10);
+        assert_eq!(WIDTH, 12);
         assert_eq!(VISIBLE_HEIGHT, 20);
-        assert_eq!(HEIGHT, 22);
+        assert_eq!(HEIGHT, 23);
     }
 
     #[test]
@@ -186,6 +198,23 @@ mod tests {
         assert_eq!(board.clear_full_rows(), 1);
         assert_eq!(board.cell(2, HEIGHT - 1), Some(Shape::T.color()));
         assert!(board.cell(2, HEIGHT - 2).is_none());
+    }
+
+    #[test]
+    fn five_rows_clear_at_once() {
+        // the most a pentomino can take down, and the only clear worth 1200.
+        // Hard to reach by hand, which is why it is checked here. Spec 0008.
+        let mut board = Board::new();
+        for y in HEIGHT - 5..HEIGHT {
+            fill_row(&mut board, y);
+        }
+
+        assert_eq!(board.clear_full_rows(), 5);
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                assert!(board.cell(x, y).is_none());
+            }
+        }
     }
 
     #[test]

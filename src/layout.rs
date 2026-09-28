@@ -1,9 +1,10 @@
 use crate::board::{HIDDEN_ROWS, VISIBLE_HEIGHT, WIDTH};
 use glam::Vec2;
 
-/// The board takes 10 columns and the panels four each, so the window is
-/// divided into this many columns of width.
-pub const TOTAL_COLUMNS: f32 = 18.0;
+/// The board takes twelve columns and the panels four each, so the window is
+/// divided into this many columns of width. Twelve since spec 0008; it was ten
+/// when a piece was four cells.
+pub const TOTAL_COLUMNS: f32 = 20.0;
 
 /// Where the board sits in the window, and how big a cell is.
 ///
@@ -73,13 +74,13 @@ mod tests {
 
     #[test]
     fn cell_size_fits_the_window() {
-        // height bound: 600 / 20 is 30, width bound: 800 / 18 is 44, so 30 wins
+        // height bound: 600 / 20 is 30, width bound: 800 / 20 is 40, so 30 wins
         let tall = Layout::new((800.0, 600.0).into());
         assert_eq!(tall.cell, 30.0);
 
-        // width bound: 360 / 18 is 20, height bound: 600 / 20 is 30, so 20 wins
+        // width bound: 360 / 20 is 18, height bound: 600 / 20 is 30, so 18 wins
         let narrow = Layout::new((360.0, 600.0).into());
-        assert_eq!(narrow.cell, 20.0);
+        assert_eq!(narrow.cell, 18.0);
     }
 
     #[test]
@@ -87,9 +88,9 @@ mod tests {
         let layout = Layout::new((800.0, 600.0).into());
         let board = layout.board_size();
 
-        assert_eq!(board.x, 300.0);
+        assert_eq!(board.x, 360.0);
         assert_eq!(board.y, 600.0);
-        assert_eq!(layout.origin.x, 250.0);
+        assert_eq!(layout.origin.x, 220.0);
         assert_eq!(layout.origin.y, 0.0);
     }
 

@@ -22,6 +22,7 @@ pub fn score_for_rows(rows: u32, level: u32) -> u32 {
         2 => 300,
         3 => 500,
         4 => 800,
+        5 => 1200,
         _ => 0,
     };
 
@@ -62,6 +63,12 @@ mod tests {
     #[test]
     fn a_single_row_scores_a_hundred() {
         assert_eq!(score_for_rows(1, 1), 100);
+    }
+
+    #[test]
+    fn five_rows_score_twelve_hundred() {
+        assert_eq!(score_for_rows(5, 1), 1200);
+        assert_eq!(score_for_rows(5, 3), 3600);
     }
 
     #[test]

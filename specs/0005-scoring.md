@@ -11,7 +11,7 @@ harder.
 ## Behavior
 
 **Line clears** score by how many go at once, multiplied by the level: one row
-100, two 300, three 500, four 800.
+100, two 300, three 500, four 800, five 1200. Five since spec 0008.
 
 **Drops** score too. A soft drop scores 1 per row fallen, a hard drop 2 per row.
 Neither is multiplied by the level.

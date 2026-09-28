@@ -10,7 +10,7 @@ slot, the next piece, and the score.
 
 ## Behavior
 
-The board is 10 columns by 20 visible rows. Two rows above the top are where
+The board is 12 columns by 20 visible rows. Three rows above the top are where
 pieces spawn: they are part of the board but are not drawn.
 
 Cells are square. The cell size is whichever fits: the window height divided by
@@ -31,7 +31,8 @@ change, since the board is stored in cells.
 
 ## Acceptance criteria
 
-- The board is 10 wide and 22 tall, 20 of them visible. — `board::tests::board_has_its_dimensions`
+- The board is 12 wide and 23 tall, 20 of them visible. — `board::tests::board_has_its_dimensions`
+- The board is twelve wide. — `board::tests::the_board_is_twelve_wide`
 - A new board is empty. — `board::tests::a_new_board_is_empty`
 - Cells can be filled and read back. — `board::tests::cells_hold_a_color`
 - Cells off the board read as occupied, so pieces can't leave it. — `board::tests::outside_the_board_is_occupied`
@@ -46,4 +47,4 @@ change, since the board is stored in cells.
 
 ## Out of scope
 
-Board sizes other than 10 by 20, and a visible grid inside the playfield.
+Board sizes other than 12 by 20, and a visible grid inside the playfield.
