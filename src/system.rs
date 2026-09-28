@@ -146,6 +146,14 @@ impl System for PauseSystem {
     }
 
     fn update_state(&self, input: &mut Input, state: &mut State) {
+        // the same way out that playing has, so a paused game is not a place
+        // escape stops working
+        if input.esc_pressed {
+            input.clear();
+            state.game_state = GameState::MainMenu;
+            return;
+        }
+
         if input.enter_pressed {
             state.events.push(Event::ButtonPressed);
             state.game_state = GameState::Playing;
@@ -363,9 +371,9 @@ pub fn lock_piece(state: &mut State) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::piece::SHAPES;
     use crate::board::{HEIGHT, WIDTH};
     use crate::piece::Shape;
+    use crate::piece::SHAPES;
 
     fn playing_state() -> State {
         let mut state = State::new();
@@ -866,6 +874,20 @@ mod tests {
         assert!(!state.hold_used);
         assert!(state.board.cell(0, HEIGHT - 1).is_none());
         assert!(state.piece.is_some());
+    }
+
+    #[test]
+    fn escape_leaves_a_paused_game() {
+        let mut state = playing_state();
+        PauseSystem.start(&mut state);
+        state.game_state = GameState::Paused;
+
+        let mut input = Input::new();
+        input.esc_pressed = true;
+        PauseSystem.update_state(&mut input, &mut state);
+
+        assert_eq!(state.game_state, GameState::MainMenu);
+        assert!(!input.esc_pressed, "the menu would quit on the same press");
     }
 
     #[test]
