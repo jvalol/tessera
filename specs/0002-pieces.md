@@ -43,7 +43,7 @@ for more than twelve in a row, and there are never more than two of a kind in a 
 
 ### Verified by hand
 
-- The pieces are easy to tell apart on screen. — run tetris and play.
+- The pieces are easy to tell apart on screen. — run tessera and play.
 
 ## Out of scope
 

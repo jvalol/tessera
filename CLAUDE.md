@@ -1,6 +1,6 @@
-# tetris
+# tessera
 
-Tetris on `blitzkit`, which owns the window, rendering, input, and sound. The
+Tessera on `blitzkit`, which owns the window, rendering, input, and sound. The
 third game on that engine, after pong and snake. The dependency is the published
 crate, overridden by the engine checkout at `../blitzkit` when built inside this
 project folder.
@@ -31,8 +31,8 @@ Behavior changes are spec driven:
 
 ## Layout
 
-- `src/main.rs` — hands a `TetrisGame` to `blitzkit::start`.
-- `src/tetris_game.rs` — the `Game` impl and the state machine.
+- `src/main.rs` — hands a `TesseraGame` to `blitzkit::start`.
+- `src/tessera_game.rs` — the `Game` impl and the state machine.
 - `src/board.rs` — the grid of cells, collision, and line clears.
 - `src/piece.rs` — the seven tetrominoes and rotation.
 - `src/bag.rs` — the seven piece bag.

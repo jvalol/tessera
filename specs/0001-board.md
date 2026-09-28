@@ -42,7 +42,7 @@ change, since the board is stored in cells.
 ### Verified by hand
 
 - The board fills the window with panels either side, at any window size. — run
-  tetris and resize it.
+  tessera and resize it.
 
 ## Out of scope
 

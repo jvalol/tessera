@@ -7,11 +7,11 @@ mod layout;
 mod piece;
 mod state;
 mod system;
-mod tetris_game;
+mod tessera_game;
 mod util;
 
-use tetris_game::TetrisGame;
+use tessera_game::TesseraGame;
 
 fn main() {
-    start("Tetris", Box::new(TetrisGame::new()));
+    start("Tessera", Box::new(TesseraGame::new()));
 }

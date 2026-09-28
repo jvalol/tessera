@@ -3,7 +3,7 @@ use crate::board::WIDTH;
 use crate::input::Input;
 use crate::piece::{Piece, Shape};
 use crate::state::*;
-use crate::tetris_game::Event;
+use crate::tessera_game::Event;
 use crate::util;
 
 /// Seconds a left or right key is held before the piece starts moving again.
@@ -48,7 +48,7 @@ pub struct MenuSystem;
 
 impl System for MenuSystem {
     fn start(&mut self, state: &mut State) {
-        state.title_text.render_text.text = String::from("TETRIS");
+        state.title_text.render_text.text = String::from("TESSERA");
         state.play_button.render_text.text = String::from("Play");
         state.play_button.set_focus(true);
         state.quit_button.set_focus(false);
@@ -147,7 +147,7 @@ impl System for PauseSystem {
         if input.enter_pressed {
             state.events.push(Event::ButtonPressed);
             state.game_state = GameState::Playing;
-            state.title_text.render_text.text = String::from("TETRIS");
+            state.title_text.render_text.text = String::from("TESSERA");
             state.play_button.render_text.text = String::from("Play");
             input.enter_pressed = false;
         }
@@ -771,7 +771,7 @@ mod tests {
         PauseSystem.update_state(&mut input, &mut state);
 
         assert_eq!(state.game_state, GameState::Playing);
-        assert_eq!(state.title_text.render_text.text, "TETRIS");
+        assert_eq!(state.title_text.render_text.text, "TESSERA");
         assert_eq!(state.play_button.render_text.text, "Play");
     }
 }

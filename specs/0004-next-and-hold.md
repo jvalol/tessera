@@ -33,7 +33,7 @@ does nothing, and locking a piece makes hold available again.
 
 ### Verified by hand
 
-- The next and hold panels show the right pieces. — run tetris, hold a piece and
+- The next and hold panels show the right pieces. — run tessera, hold a piece and
   watch the panels.
 
 ## Out of scope

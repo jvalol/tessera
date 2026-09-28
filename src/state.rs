@@ -2,7 +2,7 @@ use crate::bag::Bag;
 use crate::board::{Board, HEIGHT, WIDTH};
 use crate::layout::Layout;
 use crate::piece::{Piece, Shape};
-use crate::tetris_game::Event;
+use crate::tessera_game::Event;
 use blitzkit::geometry::quad::Quad;
 use blitzkit::geometry::Geometry;
 use blitzkit::renderer::render_text::{RenderText, TextRenderer, UNBOUNDED_F32};
@@ -17,12 +17,12 @@ pub enum GameState {
     Quitting,
 }
 
-pub struct TetrisText {
+pub struct TesseraText {
     pub render_text: RenderText,
     pub visible: bool,
 }
 
-impl TetrisText {
+impl TesseraText {
     pub fn focused(&self) -> bool {
         self.render_text.focused
     }
@@ -32,8 +32,8 @@ impl TetrisText {
     }
 }
 
-fn text(content: &str, size: f32) -> TetrisText {
-    TetrisText {
+fn text(content: &str, size: f32) -> TesseraText {
+    TesseraText {
         visible: false,
         render_text: RenderText {
             position: (0.0, 0.0).into(),
@@ -67,15 +67,15 @@ pub struct State {
     /// What happened this frame, drained by the game to play sounds.
     pub events: Vec<Event>,
 
-    pub title_text: TetrisText,
-    pub play_button: TetrisText,
-    pub quit_button: TetrisText,
-    pub score_text: TetrisText,
-    pub level_text: TetrisText,
-    pub rows_text: TetrisText,
-    pub hold_label: TetrisText,
-    pub next_label: TetrisText,
-    pub game_over_text: TetrisText,
+    pub title_text: TesseraText,
+    pub play_button: TesseraText,
+    pub quit_button: TesseraText,
+    pub score_text: TesseraText,
+    pub level_text: TesseraText,
+    pub rows_text: TesseraText,
+    pub hold_label: TesseraText,
+    pub next_label: TesseraText,
+    pub game_over_text: TesseraText,
 }
 
 impl State {
@@ -100,7 +100,7 @@ impl State {
             delta_time: 0.0,
             events: Vec::new(),
 
-            title_text: text("TETRIS", 64.0),
+            title_text: text("TESSERA", 64.0),
             play_button: text("Play", 32.0),
             quit_button: text("Quit", 32.0),
             score_text: text("Score: 0", 16.0),

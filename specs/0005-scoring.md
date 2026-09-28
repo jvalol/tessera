@@ -36,7 +36,7 @@ The score, level, and row count are drawn in the left panel while playing.
 
 ### Verified by hand
 
-- The score and level read correctly while playing. — run tetris and clear lines.
+- The score and level read correctly while playing. — run tessera and clear lines.
 
 ## Out of scope
 

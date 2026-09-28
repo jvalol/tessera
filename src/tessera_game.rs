@@ -49,7 +49,7 @@ impl Default for SoundPack {
     }
 }
 
-pub struct TetrisGame {
+pub struct TesseraGame {
     pub input: Input,
     state: State,
     menu_system: MenuSystem,
@@ -60,7 +60,7 @@ pub struct TetrisGame {
     sound_pack: SoundPack,
 }
 
-impl TetrisGame {
+impl TesseraGame {
     pub fn new() -> Self {
         Self {
             input: Input::new(),
@@ -75,13 +75,13 @@ impl TetrisGame {
     }
 }
 
-impl Default for TetrisGame {
+impl Default for TesseraGame {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Game for TetrisGame {
+impl Game for TesseraGame {
     fn initialize(
         &mut self,
         geometry: &mut Geometry,
@@ -181,8 +181,8 @@ mod tests {
     use super::*;
     use blitzkit::geometry::Geometry;
 
-    fn game_in(game_state: GameState) -> TetrisGame {
-        let mut game = TetrisGame::new();
+    fn game_in(game_state: GameState) -> TesseraGame {
+        let mut game = TesseraGame::new();
         game.resized((800.0, 600.0));
         game.state.game_state = game_state;
         game
@@ -203,7 +203,7 @@ mod tests {
         game.focus_changed(false);
 
         assert_eq!(game.state.game_state, GameState::MainMenu);
-        assert_eq!(game.state.title_text.render_text.text, "TETRIS");
+        assert_eq!(game.state.title_text.render_text.text, "TESSERA");
     }
 
     #[test]

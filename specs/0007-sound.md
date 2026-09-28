@@ -32,7 +32,7 @@ plays nothing and the game runs on, per the engine's spec 0004.
 
 ### Verified by hand
 
-- Each event is audible and tells itself apart. — run tetris, lock a piece,
+- Each event is audible and tells itself apart. — run tessera, lock a piece,
   clear a line, and top out.
 
 ## Out of scope

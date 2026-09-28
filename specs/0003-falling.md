@@ -45,7 +45,7 @@ piece is four cells tall.
 
 ### Verified by hand
 
-- The falling speed is playable at level 1 and frantic by level 10. — run tetris.
+- The falling speed is playable at level 1 and frantic by level 10. — run tessera.
 
 ## Out of scope
 
