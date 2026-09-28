@@ -32,6 +32,14 @@ impl TesseraText {
     }
 }
 
+/// A line the player can choose. The engine draws it dimmed until it is the
+/// focused one, which then carries a caret. See blitzkit spec 0023.
+fn button(content: &str, size: f32) -> TesseraText {
+    let mut button = text(content, size);
+    button.render_text.selectable = true;
+    button
+}
+
 fn text(content: &str, size: f32) -> TesseraText {
     TesseraText {
         visible: false,
@@ -101,8 +109,8 @@ impl State {
             events: Vec::new(),
 
             title_text: text("TESSERA", 64.0),
-            play_button: text("Play", 32.0),
-            quit_button: text("Quit", 32.0),
+            play_button: button("Play", 32.0),
+            quit_button: button("Quit", 32.0),
             score_text: text("Score: 0", 16.0),
             level_text: text("Level: 1", 16.0),
             rows_text: text("Rows: 0", 16.0),
@@ -282,6 +290,21 @@ impl Default for State {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_menu_items_are_selectable_and_the_title_is_not() {
+        // the engine dims a selectable line until it is focused and gives the
+        // focused one a caret, which is the only thing saying Quit can be
+        // chosen at all. See blitzkit spec 0023.
+        let state = State::new();
+
+        assert!(state.play_button.render_text.selectable);
+        assert!(state.quit_button.render_text.selectable);
+        assert!(
+            !state.title_text.render_text.selectable,
+            "the title is not a choice"
+        );
+    }
 
     fn state_of(width: f32, height: f32) -> State {
         let mut state = State::new();
