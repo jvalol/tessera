@@ -17,8 +17,10 @@ chooses, and Escape quits.
 and throws the board away.
 
 **Paused.** Losing window focus during a game pauses it and shows Paused with
-Resume. Enter resumes. Nothing falls while paused. Losing focus anywhere else
-changes nothing.
+Resume. Enter resumes, and Escape leaves for the menu the way it does while
+playing, so a pause is not the one state the key stops working in. Nothing
+falls while paused. The hold label is hidden, because the overlay writes Paused
+into the corner it sits in. Losing focus anywhere else changes nothing.
 
 **Game over.** The final score is shown for five seconds, then the game returns
 to the menu. Escape quits from here.
@@ -37,11 +39,20 @@ the menu and quit.
 - Losing focus while playing pauses. — `tessera_game::tests::losing_focus_while_playing_pauses`
 - Losing focus on the menu changes nothing. — `tessera_game::tests::losing_focus_on_the_menu_does_nothing`
 - Nothing falls while paused. — `tessera_game::tests::nothing_falls_while_paused`
+- Escape leaves a paused game. — `system::tests::escape_leaves_a_paused_game`
+- The menu it arrives at reads like the menu, not like the pause it came from.
+  — `tessera_game::tests::escaping_out_of_a_pause_arrives_at_a_real_menu`
+- The hold label goes away while paused. — `system::tests::pausing_hides_the_hold_label`
 - Escape is ignored on key repeat. — `input::tests::escape_ignores_key_repeat`
+
+The menu one is not decoration. Pong had the same gap and its menu came up
+still reading "Paused" and "Resume", because nothing could reach the menu
+before from a state that had overwritten them.
 
 ### Verified by hand
 
 - The five second game over wait feels right. — run tessera and top out.
+- Escape out of a pause, 2026-09-28.
 
 ## Out of scope
 
