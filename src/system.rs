@@ -37,7 +37,9 @@ impl System for VisibilitySystem {
         state.score_text.visible = in_game;
         state.level_text.visible = in_game;
         state.rows_text.visible = in_game;
-        state.hold_label.visible = in_game;
+        // the pause overlay writes "Paused" into the same corner of the left
+        // panel, so the hold label would be drawn through it
+        state.hold_label.visible = in_game && !paused;
         state.next_label.visible = in_game;
 
         state.game_over_text.visible = state.game_state == GameState::GameOver;
@@ -719,6 +721,21 @@ mod tests {
         play(&mut input, &mut state);
 
         assert!(!state.hold_used);
+    }
+
+    #[test]
+    fn pausing_hides_the_hold_label() {
+        // both sit at the top of the left panel, so drawing them together made
+        // each unreadable
+        let mut state = playing_state();
+        VisibilitySystem.update_state(&mut Input::new(), &mut state);
+        assert!(state.hold_label.visible);
+
+        state.game_state = GameState::Paused;
+        VisibilitySystem.update_state(&mut Input::new(), &mut state);
+
+        assert!(!state.hold_label.visible);
+        assert!(state.title_text.visible, "the pause overlay should be up");
     }
 
     #[test]
