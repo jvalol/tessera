@@ -16,3 +16,7 @@ not a priority, and it never changes once a spec exists.
 | [0006](0006-game-flow.md) | Menu, pausing, and game over |
 | [0007](0007-sound.md) | What makes a sound |
 | [0008](0008-pentominoes.md) | The twelve pentominoes, rotation, and the bag |
+
+---
+
+I asked AI to draft this for me. I've edited it. Any surviving AI smells are my oversight.
