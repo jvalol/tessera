@@ -58,9 +58,52 @@ pub struct TesseraGame {
     pause_system: PauseSystem,
     game_over_system: GameOverSystem,
     sound_pack: SoundPack,
+    /// Whether this run is only here to be photographed, and how long it has
+    /// been playing. See `refresh-screenshots` in the project above.
+    ///
+    /// A picture of the main menu says nothing about tessera, and a picture of
+    /// an empty well says little more. This plays it: pieces fall and settle
+    /// on their own with no hand on them, so the well fills by itself.
+    staged: bool,
+    played: f32,
 }
 
 impl TesseraGame {
+    /// How long the posed game plays before it holds still.
+    ///
+    /// Long enough for a few pieces to have landed, so the well has a floor
+    /// with the shape of a game in it, and short enough that none of it has
+    /// been cleared away.
+    ///
+    /// Eighteen seconds lands one piece, because a piece at level one takes
+    /// most of that to reach the bottom. Seventy five lands seven, and with no
+    /// hand on them every one lands in the middle column, so the well holds a
+    /// spire rather than a game. Nothing here moves a piece sideways, so one
+    /// landed and one falling is as much of a game as this can honestly show.
+    const PLAYS_FOR: f32 = 18.0;
+
+    /// Plays the game for the camera. See `refresh-screenshots`.
+    ///
+    /// All of it on the first frame rather than over eighteen real seconds,
+    /// because the shutter is on a timer and will not wait for the well to
+    /// fill.
+    fn pose(&mut self) {
+        if self.played == 0.0 {
+            self.state.game_state = GameState::Playing;
+            self.play_system.start(&mut self.state);
+
+            let step = 1.0 / 60.0;
+            while self.played < Self::PLAYS_FOR && self.state.game_state == GameState::Playing {
+                self.state.delta_time = step;
+                self.play_system
+                    .update_state(&mut self.input, &mut self.state);
+                self.played += step;
+            }
+        }
+
+        self.state.delta_time = 0.0;
+    }
+
     pub fn new() -> Self {
         Self {
             input: Input::new(),
@@ -70,6 +113,8 @@ impl TesseraGame {
             play_system: PlaySystem,
             pause_system: PauseSystem,
             game_over_system: GameOverSystem::new(),
+            staged: crate::staged(),
+            played: 0.0,
             sound_pack: SoundPack::new(),
         }
     }
@@ -102,6 +147,10 @@ impl Game for TesseraGame {
         sound_system: &SoundSystem,
     ) {
         self.state.delta_time = dt;
+
+        if self.staged {
+            self.pose();
+        }
 
         self.visibility_system
             .update_state(&mut self.input, &mut self.state);
@@ -166,6 +215,12 @@ impl Game for TesseraGame {
     }
 
     fn focus_changed(&mut self, focus: bool) {
+        // a staged run is photographed from behind the terminal, so it never
+        // has focus and pausing on losing it would photograph the pause screen
+        if self.staged {
+            return;
+        }
+
         // only a game in progress can be paused; losing focus on the menu or the
         // game over screen leaves the screen alone
         if !focus && self.state.game_state == GameState::Playing {
