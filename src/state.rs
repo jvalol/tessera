@@ -5,6 +5,7 @@ use crate::piece::{Piece, Shape};
 use crate::tessera_game::Event;
 use blitzkit::geometry::quad::Quad;
 use blitzkit::geometry::Geometry;
+use blitzkit::notice;
 use blitzkit::renderer::render_text::{RenderText, TextRenderer, UNBOUNDED_F32};
 use glam::Vec2;
 
@@ -208,6 +209,13 @@ impl State {
             self.push_preview(geometry, shape, self.layout.left_panel());
         }
         self.push_preview(geometry, self.bag.peek(), self.layout.right_panel());
+
+        // last, so the panel covers the stack rather than the other way round
+        if self.game_over_text.visible {
+            for quad in notice::framing(&self.game_over_text.render_text).iter() {
+                geometry.push_quad(quad);
+            }
+        }
     }
 
     /// One cell of the stack, inset a little so the blocks read separately.
@@ -359,5 +367,24 @@ mod tests {
 
         assert_eq!(state.game_over_text.render_text.position.x, 400.0);
         assert_eq!(state.game_over_text.render_text.position.y, 300.0);
+    }
+
+    #[test]
+    fn the_game_over_line_is_framed() {
+        let mut state = State::new();
+        state.layout(glam::vec2(800.0, 600.0));
+        state.game_state = GameState::GameOver;
+        state.game_over_text.visible = true;
+        state.game_over_text.render_text.text = String::from("Game Over  206");
+
+        let mut bare = Geometry::new();
+        state.game_over_text.visible = false;
+        state.update_geometry(&mut bare);
+
+        let mut framed = Geometry::new();
+        state.game_over_text.visible = true;
+        state.update_geometry(&mut framed);
+
+        assert_eq!(framed.num_quads, bare.num_quads + 2);
     }
 }
