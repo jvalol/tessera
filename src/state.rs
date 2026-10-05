@@ -11,7 +11,6 @@ use glam::Vec2;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GameState {
-    MainMenu,
     Playing,
     Paused,
     GameOver,
@@ -21,24 +20,6 @@ pub enum GameState {
 pub struct TesseraText {
     pub render_text: RenderText,
     pub visible: bool,
-}
-
-impl TesseraText {
-    pub fn focused(&self) -> bool {
-        self.render_text.focused
-    }
-
-    pub fn set_focus(&mut self, focused: bool) {
-        self.render_text.focused = focused;
-    }
-}
-
-/// A line the player can choose. The engine draws it dimmed until it is the
-/// focused one, which then carries a caret. See blitzkit spec 0023.
-fn button(content: &str, size: f32) -> TesseraText {
-    let mut button = text(content, size);
-    button.render_text.selectable = true;
-    button
 }
 
 fn text(content: &str, size: f32) -> TesseraText {
@@ -76,9 +57,7 @@ pub struct State {
     /// What happened this frame, drained by the game to play sounds.
     pub events: Vec<Event>,
 
-    pub title_text: TesseraText,
-    pub play_button: TesseraText,
-    pub quit_button: TesseraText,
+    pub pause_text: TesseraText,
     pub score_text: TesseraText,
     pub level_text: TesseraText,
     pub rows_text: TesseraText,
@@ -89,12 +68,16 @@ pub struct State {
 
 impl State {
     pub fn new() -> Self {
+        let mut pause_text = text("", 24.0);
+        pause_text.render_text.bounds = (UNBOUNDED_F32, UNBOUNDED_F32).into();
+        pause_text.render_text.centered = true;
+
         let mut game_over_text = text("", 32.0);
         game_over_text.render_text.bounds = (UNBOUNDED_F32, UNBOUNDED_F32).into();
         game_over_text.render_text.centered = true;
 
         Self {
-            game_state: GameState::MainMenu,
+            game_state: GameState::Playing,
             board: Board::new(),
             piece: None,
             hold: None,
@@ -109,9 +92,7 @@ impl State {
             delta_time: 0.0,
             events: Vec::new(),
 
-            title_text: text("TESSERA", 64.0),
-            play_button: button("Play", 32.0),
-            quit_button: button("Quit", 32.0),
+            pause_text,
             score_text: text("Score: 0", 16.0),
             level_text: text("Level: 1", 16.0),
             rows_text: text("Rows: 0", 16.0),
@@ -129,9 +110,7 @@ impl State {
         // narrow enough that "Score: 12345" fits the panel even in a small window
         let panel_size = (layout.cell * 0.3).clamp(8.0, 18.0);
 
-        self.title_text.render_text.position = (20.0, 20.0).into();
-        self.play_button.render_text.position = (40.0, 100.0).into();
-        self.quit_button.render_text.position = (40.0, 160.0).into();
+        self.pause_text.render_text.position = size * 0.5;
 
         let left = layout.left_panel();
         self.hold_label.render_text.position = (left.x, left.y).into();
@@ -210,10 +189,12 @@ impl State {
         }
         self.push_preview(geometry, self.bag.peek(), self.layout.right_panel());
 
-        // last, so the panel covers the stack rather than the other way round
-        if self.game_over_text.visible {
-            for quad in notice::framing(&self.game_over_text.render_text).iter() {
-                geometry.push_quad(quad);
+        // last, so a panel covers the stack rather than the other way round
+        for text in [&self.pause_text, &self.game_over_text] {
+            if text.visible {
+                for quad in notice::framing(&text.render_text).iter() {
+                    geometry.push_quad(quad);
+                }
             }
         }
     }
@@ -272,9 +253,7 @@ impl State {
 
     fn update_text(&self, text_renderer: &mut TextRenderer) {
         for text in [
-            &self.title_text,
-            &self.play_button,
-            &self.quit_button,
+            &self.pause_text,
             &self.score_text,
             &self.level_text,
             &self.rows_text,
@@ -299,21 +278,6 @@ impl Default for State {
 mod tests {
     use super::*;
 
-    #[test]
-    fn the_menu_items_are_selectable_and_the_title_is_not() {
-        // the engine dims a selectable line until it is focused and gives the
-        // focused one a caret, which is the only thing saying Quit can be
-        // chosen at all. See blitzkit spec 0023.
-        let state = State::new();
-
-        assert!(state.play_button.render_text.selectable);
-        assert!(state.quit_button.render_text.selectable);
-        assert!(
-            !state.title_text.render_text.selectable,
-            "the title is not a choice"
-        );
-    }
-
     fn state_of(width: f32, height: f32) -> State {
         let mut state = State::new();
         state.layout((width, height).into());
@@ -321,10 +285,11 @@ mod tests {
     }
 
     #[test]
-    fn a_new_state_starts_on_the_menu() {
+    fn a_new_state_is_already_playing() {
+        // there is no menu to pass through: the arcade is the menu
         let state = State::new();
 
-        assert_eq!(state.game_state, GameState::MainMenu);
+        assert_eq!(state.game_state, GameState::Playing);
         assert_eq!(state.level, 1);
         assert!(state.piece.is_none());
         assert!(state.hold.is_none());

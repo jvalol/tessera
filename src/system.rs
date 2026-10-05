@@ -11,6 +11,10 @@ pub const MOVE_DELAY: f32 = 0.17;
 /// Seconds between moves once a held key has started repeating.
 pub const MOVE_REPEAT: f32 = 0.05;
 
+/// What a paused game says, and what an ended one says under the score.
+pub const PAUSED: &str = "Paused. Press enter to carry on.";
+pub const AGAIN: &str = "Press enter to start again.";
+
 /// Sideways offsets tried when a rotation does not fit where it is.
 const KICKS: [i32; 6] = [-1, 1, -2, 2, -3, 3];
 
@@ -24,63 +28,20 @@ pub struct VisibilitySystem;
 
 impl System for VisibilitySystem {
     fn update_state(&self, _input: &mut Input, state: &mut State) {
-        let menu = state.game_state == GameState::MainMenu;
         let paused = state.game_state == GameState::Paused;
         let in_game = state.game_state == GameState::Playing
             || paused
             || state.game_state == GameState::GameOver;
 
-        state.title_text.visible = menu || paused;
-        state.play_button.visible = menu || paused;
-        state.quit_button.visible = menu;
+        state.pause_text.visible = paused;
 
         state.score_text.visible = in_game;
         state.level_text.visible = in_game;
         state.rows_text.visible = in_game;
-        // the pause overlay writes "Paused" into the same corner of the left
-        // panel, so the hold label would be drawn through it
-        state.hold_label.visible = in_game && !paused;
+        state.hold_label.visible = in_game;
         state.next_label.visible = in_game;
 
         state.game_over_text.visible = state.game_state == GameState::GameOver;
-    }
-}
-
-pub struct MenuSystem;
-
-impl System for MenuSystem {
-    fn start(&mut self, state: &mut State) {
-        state.title_text.render_text.text = String::from("TESSERA");
-        state.play_button.render_text.text = String::from("Play");
-        state.play_button.set_focus(true);
-        state.quit_button.set_focus(false);
-    }
-
-    fn update_state(&self, input: &mut Input, state: &mut State) {
-        if input.esc_pressed {
-            state.game_state = GameState::Quitting;
-            input.esc_pressed = false;
-        }
-
-        if state.play_button.focused() && input.ui_down_pressed() {
-            state.events.push(Event::FocusChanged);
-            state.play_button.set_focus(false);
-            state.quit_button.set_focus(true);
-        } else if state.quit_button.focused() && input.ui_up_pressed() {
-            state.events.push(Event::FocusChanged);
-            state.quit_button.set_focus(false);
-            state.play_button.set_focus(true);
-        }
-
-        if input.enter_pressed {
-            state.events.push(Event::ButtonPressed);
-            state.game_state = if state.play_button.focused() {
-                GameState::Playing
-            } else {
-                GameState::Quitting
-            };
-            input.enter_pressed = false;
-        }
     }
 }
 
@@ -104,7 +65,7 @@ impl System for PlaySystem {
     fn update_state(&self, input: &mut Input, state: &mut State) {
         if input.esc_pressed {
             input.clear();
-            state.game_state = GameState::MainMenu;
+            state.game_state = GameState::Quitting;
             return;
         }
 
@@ -140,9 +101,7 @@ pub struct PauseSystem;
 
 impl System for PauseSystem {
     fn start(&mut self, state: &mut State) {
-        state.title_text.render_text.text = String::from("Paused");
-        state.play_button.render_text.text = String::from("Resume");
-        state.play_button.set_focus(true);
+        state.pause_text.render_text.text = String::from(PAUSED);
     }
 
     fn update_state(&self, input: &mut Input, state: &mut State) {
@@ -150,42 +109,23 @@ impl System for PauseSystem {
         // escape stops working
         if input.esc_pressed {
             input.clear();
-            state.game_state = GameState::MainMenu;
+            state.game_state = GameState::Quitting;
             return;
         }
 
         if input.enter_pressed {
             state.events.push(Event::ButtonPressed);
             state.game_state = GameState::Playing;
-            state.title_text.render_text.text = String::from("TESSERA");
-            state.play_button.render_text.text = String::from("Play");
             input.enter_pressed = false;
         }
     }
 }
 
-pub struct GameOverSystem {
-    last_time: std::time::Instant,
-}
-
-impl GameOverSystem {
-    pub fn new() -> Self {
-        Self {
-            last_time: std::time::Instant::now(),
-        }
-    }
-}
-
-impl Default for GameOverSystem {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub struct GameOverSystem;
 
 impl System for GameOverSystem {
     fn start(&mut self, state: &mut State) {
-        self.last_time = std::time::Instant::now();
-        state.game_over_text.render_text.text = format!("Game Over  {}", state.score);
+        state.game_over_text.render_text.text = format!("Game Over  {}\n{}", state.score, AGAIN);
     }
 
     fn update_state(&self, input: &mut Input, state: &mut State) {
@@ -195,8 +135,12 @@ impl System for GameOverSystem {
             return;
         }
 
-        if self.last_time.elapsed().as_secs_f32() > 5.0 {
-            state.game_state = GameState::MainMenu;
+        // a game that ended waits to be asked rather than counting down to a
+        // menu that is no longer there
+        if input.enter_pressed {
+            state.events.push(Event::ButtonPressed);
+            state.game_state = GameState::Playing;
+            input.enter_pressed = false;
         }
     }
 }
@@ -732,9 +676,10 @@ mod tests {
     }
 
     #[test]
-    fn pausing_hides_the_hold_label() {
-        // both sit at the top of the left panel, so drawing them together made
-        // each unreadable
+    fn pausing_leaves_the_panel_alone() {
+        // the pause overlay used to be written into the top of the left panel,
+        // where the hold label lives, so the label had to be hidden under it.
+        // It is centred on its own panel now and covers nothing it needs to.
         let mut state = playing_state();
         VisibilitySystem.update_state(&mut Input::new(), &mut state);
         assert!(state.hold_label.visible);
@@ -742,8 +687,8 @@ mod tests {
         state.game_state = GameState::Paused;
         VisibilitySystem.update_state(&mut Input::new(), &mut state);
 
-        assert!(!state.hold_label.visible);
-        assert!(state.title_text.visible, "the pause overlay should be up");
+        assert!(state.hold_label.visible);
+        assert!(state.pause_text.visible, "the pause overlay should be up");
     }
 
     #[test]
@@ -833,24 +778,12 @@ mod tests {
     }
 
     #[test]
-    fn escape_returns_to_the_menu() {
+    fn escape_quits_a_game_in_play() {
         let mut state = playing_state();
         let mut input = Input::new();
         input.esc_pressed = true;
 
         play(&mut input, &mut state);
-
-        assert_eq!(state.game_state, GameState::MainMenu);
-    }
-
-    #[test]
-    fn escape_quits_from_the_menu() {
-        let mut state = State::new();
-        state.layout((800.0, 600.0).into());
-        let mut input = Input::new();
-        input.esc_pressed = true;
-
-        MenuSystem.update_state(&mut input, &mut state);
 
         assert_eq!(state.game_state, GameState::Quitting);
     }
@@ -886,23 +819,39 @@ mod tests {
         input.esc_pressed = true;
         PauseSystem.update_state(&mut input, &mut state);
 
-        assert_eq!(state.game_state, GameState::MainMenu);
-        assert!(!input.esc_pressed, "the menu would quit on the same press");
+        assert_eq!(state.game_state, GameState::Quitting);
+        assert!(!input.esc_pressed, "it would quit twice on the one press");
     }
 
     #[test]
-    fn resuming_restores_the_menu_text() {
+    fn resuming_carries_on_where_it_stopped() {
         let mut state = playing_state();
         PauseSystem.start(&mut state);
         state.game_state = GameState::Paused;
-        assert_eq!(state.play_button.render_text.text, "Resume");
+        assert_eq!(state.pause_text.render_text.text, PAUSED);
 
         let mut input = Input::new();
         input.enter_pressed = true;
         PauseSystem.update_state(&mut input, &mut state);
 
         assert_eq!(state.game_state, GameState::Playing);
-        assert_eq!(state.title_text.render_text.text, "TESSERA");
-        assert_eq!(state.play_button.render_text.text, "Play");
+    }
+
+    #[test]
+    fn an_ended_game_waits_to_be_asked() {
+        let mut state = playing_state();
+        state.game_state = GameState::GameOver;
+        GameOverSystem.start(&mut state);
+
+        // nothing happens on its own: it used to count five seconds down to a
+        // menu that is no longer there
+        GameOverSystem.update_state(&mut Input::new(), &mut state);
+        assert_eq!(state.game_state, GameState::GameOver);
+
+        let mut input = Input::new();
+        input.enter_pressed = true;
+        GameOverSystem.update_state(&mut input, &mut state);
+
+        assert_eq!(state.game_state, GameState::Playing);
     }
 }

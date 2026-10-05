@@ -56,15 +56,6 @@ impl Input {
         }
     }
 
-    /// Menus move with up and down, whichever keys the player uses.
-    pub fn ui_up_pressed(&self) -> bool {
-        self.up_pressed
-    }
-
-    pub fn ui_down_pressed(&self) -> bool {
-        self.down_pressed
-    }
-
     /// Forgets the one-shot presses, which a system calls once it has acted.
     pub fn clear_presses(&mut self) {
         self.rotate_cw_pressed = false;

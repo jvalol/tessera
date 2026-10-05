@@ -16,7 +16,6 @@ const BLIP_BYTES: &[u8] = include_bytes!("../res/sounds/4362__noisecollector__po
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Event {
     ButtonPressed,
-    FocusChanged,
     PieceLocked,
     RowsCleared,
     GameOver,
@@ -52,7 +51,6 @@ impl Default for SoundPack {
 pub struct TesseraGame {
     pub input: Input,
     state: State,
-    menu_system: MenuSystem,
     visibility_system: VisibilitySystem,
     play_system: PlaySystem,
     pause_system: PauseSystem,
@@ -89,7 +87,6 @@ impl TesseraGame {
     /// fill.
     fn pose(&mut self) {
         if self.played == 0.0 {
-            self.state.game_state = GameState::Playing;
             self.play_system.start(&mut self.state);
 
             let step = 1.0 / 60.0;
@@ -108,11 +105,10 @@ impl TesseraGame {
         Self {
             input: Input::new(),
             state: State::new(),
-            menu_system: MenuSystem,
             visibility_system: VisibilitySystem,
             play_system: PlaySystem,
             pause_system: PauseSystem,
-            game_over_system: GameOverSystem::new(),
+            game_over_system: GameOverSystem,
             staged: crate::staged(),
             played: 0.0,
             sound_pack: SoundPack::new(),
@@ -135,7 +131,7 @@ impl Game for TesseraGame {
         window_size: (f32, f32),
     ) {
         self.resized(window_size);
-        self.menu_system.start(&mut self.state);
+        self.play_system.start(&mut self.state);
         self.state.initialize(geometry, text_renderer);
     }
 
@@ -156,34 +152,22 @@ impl Game for TesseraGame {
             .update_state(&mut self.input, &mut self.state);
 
         match self.state.game_state {
-            GameState::MainMenu => {
-                self.menu_system
-                    .update_state(&mut self.input, &mut self.state);
-                if self.state.game_state == GameState::Playing {
-                    self.play_system.start(&mut self.state);
-                }
-            }
             GameState::Playing => {
                 self.play_system
                     .update_state(&mut self.input, &mut self.state);
-                if self.state.game_state == GameState::MainMenu {
-                    self.menu_system.start(&mut self.state);
-                } else if self.state.game_state == GameState::GameOver {
+                if self.state.game_state == GameState::GameOver {
                     self.game_over_system.start(&mut self.state);
                 }
             }
             GameState::Paused => {
                 self.pause_system
                     .update_state(&mut self.input, &mut self.state);
-                if self.state.game_state == GameState::MainMenu {
-                    self.menu_system.start(&mut self.state);
-                }
             }
             GameState::GameOver => {
                 self.game_over_system
                     .update_state(&mut self.input, &mut self.state);
-                if self.state.game_state == GameState::MainMenu {
-                    self.menu_system.start(&mut self.state);
+                if self.state.game_state == GameState::Playing {
+                    self.play_system.start(&mut self.state);
                 }
             }
             GameState::Quitting => {}
@@ -194,7 +178,7 @@ impl Game for TesseraGame {
                 Event::RowsCleared => 1.6,
                 Event::PieceLocked => 0.8,
                 Event::GameOver => 0.5,
-                Event::ButtonPressed | Event::FocusChanged => 1.0,
+                Event::ButtonPressed => 1.0,
             };
             sound_system.queue(self.sound_pack.blip(speed));
         }
@@ -252,24 +236,26 @@ mod tests {
         game.focus_changed(false);
 
         assert_eq!(game.state.game_state, GameState::Paused);
-        assert_eq!(game.state.play_button.render_text.text, "Resume");
+        assert_eq!(
+            game.state.pause_text.render_text.text,
+            crate::system::PAUSED
+        );
     }
 
     #[test]
-    fn losing_focus_on_the_menu_does_nothing() {
-        let mut game = game_in(GameState::MainMenu);
+    fn losing_focus_while_already_over_does_nothing() {
+        let mut game = game_in(GameState::GameOver);
         game.focus_changed(false);
 
-        assert_eq!(game.state.game_state, GameState::MainMenu);
-        assert_eq!(game.state.title_text.render_text.text, "TESSERA");
+        assert_eq!(game.state.game_state, GameState::GameOver);
     }
 
     #[test]
-    fn escaping_out_of_a_pause_arrives_at_a_real_menu() {
+    fn escaping_out_of_a_pause_quits() {
         let mut game = game_in(GameState::Playing);
         game.play_system.start(&mut game.state);
         game.focus_changed(false);
-        assert_eq!(game.state.play_button.render_text.text, "Resume");
+        assert_eq!(game.state.game_state, GameState::Paused);
 
         game.input.esc_pressed = true;
         let mut geometry = Geometry::new();
@@ -277,10 +263,7 @@ mod tests {
         let sound_system = SoundSystem::new();
         game.update(0.016, &mut geometry, &mut text_renderer, &sound_system);
 
-        assert_eq!(game.state.game_state, GameState::MainMenu);
-        assert_eq!(game.state.title_text.render_text.text, "TESSERA");
-        assert_eq!(game.state.play_button.render_text.text, "Play");
-        assert!(game.state.play_button.focused());
+        assert_eq!(game.state.game_state, GameState::Quitting);
     }
 
     #[test]
