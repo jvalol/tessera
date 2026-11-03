@@ -19,5 +19,5 @@ pub fn staged() -> bool {
 }
 
 fn main() {
-    start("Tessera", Box::new(TesseraGame::new()));
+    start("Tessera", Box::new(TesseraGame::new(staged())));
 }

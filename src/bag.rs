@@ -7,12 +7,31 @@ use std::collections::VecDeque;
 /// of a kind come together. See spec 0008.
 pub struct Bag {
     queue: VecDeque<Shape>,
+    /// Whether a refill shuffles. See `in_order`.
+    shuffled: bool,
 }
 
 impl Bag {
     pub fn new() -> Bag {
         let mut bag = Bag {
             queue: VecDeque::new(),
+            shuffled: true,
+        };
+        bag.refill();
+        bag
+    }
+
+    /// The same twelve, dealt in the order `SHAPES` lists them and never
+    /// shuffled.
+    ///
+    /// **For a run that exists to be photographed.** A staged run plays
+    /// itself for a few seconds and the picture is of the board it left,
+    /// so a shuffled bag means no two staged runs agree and every
+    /// regenerated screenshot of tessera is a different board. Spec 0009.
+    pub fn in_order() -> Bag {
+        let mut bag = Bag {
+            queue: VecDeque::new(),
+            shuffled: false,
         };
         bag.refill();
         bag
@@ -33,7 +52,9 @@ impl Bag {
 
     fn refill(&mut self) {
         let mut shapes = SHAPES;
-        shapes.shuffle(&mut rand::thread_rng());
+        if self.shuffled {
+            shapes.shuffle(&mut rand::thread_rng());
+        }
         self.queue.extend(shapes.iter());
     }
 }

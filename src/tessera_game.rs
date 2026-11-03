@@ -87,6 +87,11 @@ impl TesseraGame {
     /// fill.
     fn pose(&mut self) {
         if self.played == 0.0 {
+            // **And the bag, which is otherwise a fresh shuffle.** The
+            // picture is of the board this run leaves behind, so a
+            // shuffled bag means no two staged runs agree and every
+            // regenerated screenshot is a different board.
+            self.state.bag = crate::bag::Bag::in_order();
             self.play_system.start(&mut self.state);
 
             let step = 1.0 / 60.0;
@@ -101,7 +106,11 @@ impl TesseraGame {
         self.state.delta_time = 0.0;
     }
 
-    pub fn new() -> Self {
+    /// `staged` rather than a call to `crate::staged()`, so that a picture
+    /// test can ask for the photographed state without putting
+    /// `--screenshot` in its own arguments. `main` passes what the
+    /// arguments say.
+    pub fn new(staged: bool) -> Self {
         Self {
             input: Input::new(),
             state: State::new(),
@@ -109,7 +118,7 @@ impl TesseraGame {
             play_system: PlaySystem,
             pause_system: PauseSystem,
             game_over_system: GameOverSystem,
-            staged: crate::staged(),
+            staged,
             played: 0.0,
             sound_pack: SoundPack::new(),
         }
@@ -118,7 +127,7 @@ impl TesseraGame {
 
 impl Default for TesseraGame {
     fn default() -> Self {
-        Self::new()
+        Self::new(false)
     }
 }
 
@@ -221,10 +230,51 @@ impl Game for TesseraGame {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// How big the picture is: the engine's own size, said once there and
+    /// read here, per its spec 0062.
+    const WIDE: u32 = blitzkit::picture::SIZE.0;
+    const TALL: u32 = blitzkit::picture::SIZE.1;
+
+    /// The board the staged run leaves, held against a picture of it.
+    /// Spec 0009.
+    ///
+    /// **Through the overlay call, because tessera is all overlay.** Every
+    /// quad it has goes into `Geometry` and it never touches `Scene`, so
+    /// the 3D-only harness photographs a blank frame of it. The engine's
+    /// spec 0078 is that call and the tighter share that goes with a flat
+    /// game.
+    ///
+    /// One `update` and no more. The pose plays the whole staged run on
+    /// its own fixed step inside the first one and then holds, so a second
+    /// call would find `played` set and move nothing.
+    #[test]
+    fn the_board_after_a_staged_run_looks_right() {
+        let reference =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/pictures/after-a-run.png");
+
+        blitzkit::picture::drawn_with_overlay_looks_right(
+            &reference,
+            (WIDE, TALL),
+            |renderer, geometry, text| {
+                let mut game = TesseraGame::new(true);
+                let sound = SoundSystem::new();
+                let mut scene = blitzkit::renderer::scene::Scene::new();
+                let mut camera = blitzkit::camera::Camera::new();
+
+                game.load(renderer);
+                game.initialize(geometry, text, &sound, (WIDE as f32, TALL as f32));
+                game.update(0.0, geometry, text, &sound);
+                game.draw(&mut scene, &mut camera);
+
+                (scene, camera)
+            },
+        );
+    }
     use blitzkit::geometry::Geometry;
 
     fn game_in(game_state: GameState) -> TesseraGame {
-        let mut game = TesseraGame::new();
+        let mut game = TesseraGame::new(false);
         game.resized((800.0, 600.0));
         game.state.game_state = game_state;
         game
