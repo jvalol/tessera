@@ -17,7 +17,3 @@ not a priority, and it never changes once a spec exists.
 | [0007](0007-sound.md) | What makes a sound |
 | [0008](0008-pentominoes.md) | The twelve pentominoes, rotation, and the bag |
 | [0009](0009-a-picture-of-the-board.md) | The staged board held against a picture of it, dealt in order so two runs agree |
-
----
-
-I asked AI to draft this for me. I've edited it. Any surviving AI smells are my oversight.
